@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import useSWR from 'swr';
 import { DOMParser, ApplyTemplate, ValueOf } from 'react-xslt';
+import './app.css';
 
 const fetcher = (url) => {
 	return fetch(url)
@@ -9,20 +10,32 @@ const fetcher = (url) => {
 }
 
 const Item = ({ xml }) => {
-	return <div>
-		<ValueOf xml={xml} select="name" />
-		<ValueOf xml={xml} select="yearpublished" />
-		<img src={ValueOf({xml, select: 'image'})} style={{ maxHeight: '200px' }} alt="Board game image" />
+	return <div className="card">
+		<img src={ValueOf({xml, select: 'image'})} style={{ maxHeight: '200px' }} alt="" />
+		<div>
+			<ValueOf xml={xml} select="name" />{" "}(<ValueOf xml={xml} select="yearpublished" />)
+		</div>
 	</div>;
 };
 
 const User = ({ username }) => {
-	const { data, error } = useSWR(`https://boardgamegeek.com/xmlapi2/collection?username=${username}`, fetcher);
+	const { data, error } = useSWR(
+		`https://boardgamegeek.com/xmlapi2/collection?username=${username}`,
+		fetcher,
+		{
+			revalidateOnFocus: false,
+			revalidateOnReconnect: false,
+			refreshWhenOffline: false,
+			refreshWhenHidden: false,
+			refreshInterval: 0
+		},
+	);
 
 	if(!data && !error) return <div> Loading... </div>;
-	if(error) return <div> Error loading </div>;
-
-	console.log(data, error);
+	if(error) {
+		console.log(error);
+		return <div> Error loading </div>;
+	}
 
 	return <ApplyTemplate xml={data} select="//item" Component={Item} />;
 };
